@@ -1,6 +1,5 @@
 # SoundMixerRemaster
 ![Image alt](https://github.com/BassTechnologies/SoundMixerRemaster/blob/main/img/Screenshot_1.png)
-Remaster of the existing SoundMixer by MirchikAhtung.
 
 ![Image alt](https://img.shields.io/badge/Script%20Version-0.6v-green)
 
