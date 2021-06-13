@@ -1,69 +1,92 @@
+/*
+	Miroslav Bass
+	bassmiroslav@gmail.com
+
+	Dev-road:
+		~ 23.02.2019 - v0.1 == Release
+		~ 25.02.2019 - v0.2 == Auto-Update + Add selecter of all process/only multimedia
+		~ 26.02.2019 - v0.3 == Change Volume in Active Window, Fix bugs
+		~ 01.03.2019 - v0.3b == Fix autoupdate
+		~ 05.03.2019 - v0.4 REBORN == Recoded profile system, Rewritten auto update system
+		~ 12.03.2019 - v0.5 REBORN == Added save profile function, Fixed the minimizing a window of sound mixer
+		~ 23.03.2019 - v0.6 RELEASE == Fix duplicate processes, Fix maximize a window
+
+		* When loading a profile, the PID will be determined based on the application process name, and not from the specified .ini file.
+		Now it makes sense to constantly use the load/unload profiles.
+
+	Last stable version: [1.0] 3.23.2019
+		~ Release
+	Current version: [1.1] 6.13.2021
+		~ [1.1.1] Code and tabulation optimization
+*/
+
 #SingleInstance ignore
 #Persistent
 OnExit, ExitLabel
 ClientVersion := "6"
 
-if not A_IsAdmin	; Запуск от им.админа
-    Run *RunAs "%A_ScriptFullPath%",,UseErrorLevel
-
-if (ErrorLevel)		{	; Запущена от админа ли
-	MsgBox, 262160, SoundMixer Reborn, For the script to work properly`, you must run it with admin rights.
-	ExitApp
+; Run as Admin
+TryAgain:
+if not A_IsAdmin
+	Run *RunAs "%A_ScriptFullPath%",,UseErrorLevel
+if (errorlevel)	{
+	MsgBox, 262212, Sound Volume Mixer, SVMixer`, was NOT run as administrator.`n`n===`nFor the text erase function to work correctly, the script must be run by the administrator.`n`nPress Yes - to run as administrator.`nPress No - to continue.
+	IfMsgBox Yes
+		goto TryAgain
 }
 
-;~  AutoUpdate
+;  AutoUpdate
 oWhr := ComObjCreate("WinHttp.WinHttpRequest.5.1")
 oWhr.Open("GET", "https://raw.githubusercontent.com/MirchikAhtung/soundmixer/master/readme.txt", false)
 oWhr.Send()
 RegExMatch(oWhr.ResponseText, "0.(.*)v`n`n  2.", version)
 
-if (version1 != ClientVersion)	{
-	MsgBox, 262212, Update released, 	Version of your client - 0.%ClientVersion%`nLatest version - 0.%version1%`n`nWant to download the new version now?`n`n"YES" - Open Browser Page`n"NO" - Open current version (0.%ClientVersion%)
-	IfMsgBox Yes	
-	{
-		run, https://github.com/MirchikAhtung/soundmixer/blob/master/SoundMixer_R0.%version1%.exe
-		ExitApp
-	}
-}
-;~  AutoUpdate
+Actualversion := InStr(version1, 6) ? True : False
+if !(Actualversion)
+	MsgBox, NEW VERSION
+	
+; if (version1 != ClientVersion)	{
+; 	MsgBox, 262212, Update released, 	Version of your client - 0.%ClientVersion%`nLatest version - 0.%version1%`n`nWant to download the new version now?`n`n"YES" - Open Browser Page`n"NO" - Open current version (0.%ClientVersion%)
+; 	IfMsgBox Yes	
+; 	{
+; 		run, https://github.com/MirchikAhtung/soundmixer/blob/master/SoundMixer_R0.%version1%.exe
+; 		ExitApp
+; 	}
+; }
 
-;~ GUI
 Gui, Margin, 10, 10
-    Gui, Add, ListView, w500 h600 vList +disabled +AltSubmit, PID|Process Name|Command Line
-		for process in ComObjGet("winmgmts:").ExecQuery("Select * from Win32_Process")
-			LV_Add("", process.ProcessID, process.Name, process.CommandLine)
-				LV_ModifyCol() 
-					RemoveRecurStrings()
-						Gui, Add, Edit, x16 y650 w220 h20 vEdit +disabled, 
-							Gui, Add, Hotkey, x16 y625 w60 h20 gAWHotkey vAWHotkey +disabled, 
-								Gui, Add, Radio, x16 y675 w70 h20 vSelected gSelected +disabled, Selected
-									Gui, Add, Radio, x85 y675 w100 h20 vAW gAW +disabled, Active Window
-										Gui, Add, Button, x246 y625 w80 h20 +Disabled vEdit2 gEdit, Edit
-											Gui, Add, Button, x246 y650 w80 h20 vAddBtn gAddBtn, Add
-											Gui, Add, Button, x210 y675 w30 h20 vunload gunload , -
-										Gui, Add, Button, x180 y675 w30 h20 vload gload , +
-									Gui, Add, Button, x246 y675 w80 h20 +disabled vRemove gRemove, Remove
-								Gui, Add, GroupBox, x6 y610 w330 h95 , 
-							Gui, Add, GroupBox, x346 y610 w160 h95 , 
-						Gui, Add, DropDownList, x86 y625 w150 h20 R5 vDDsL hwndhDDL gDDL , 
-					Gui, Add, Radio, x352 y657 w75 w73 vAP gAllProcess +Checked, All process
-				Gui, Add, Radio, x430 y652 w80 w73 vOM gOnlyMedia, Only media
-			Gui, Add, Slider, x350 y680 w152 h20 vSlider Range0-100 ToolTip  +disabled, 0
-		Gui, Add, Button, x356 y625 w70 h20 vSave gSave +disabled, Save
-    Gui, Add, Button, x430 y625 w70 h20 vCancel  gCancel +disabled, Cancel
-Gui, Show,w510 h710, SoundMixer Reborn | @bass_devware | Release [0.%ClientVersion%]
-;~ GUI
-;~ Tray
+Gui, Add, ListView, w500 h600 vList +disabled +AltSubmit, PID|Process Name|Command Line
+
+for process in ComObjGet("winmgmts:").ExecQuery("Select * from Win32_Process")
+	LV_Add("", process.ProcessID, process.Name, process.CommandLine)
+LV_ModifyCol() 
+RemoveRecurStrings()
+
+Gui, Add, Edit, x16 y650 w220 h20 vEdit +disabled, 
+Gui, Add, Hotkey, x16 y625 w60 h20 gAWHotkey vAWHotkey +disabled, 
+Gui, Add, Radio, x16 y675 w70 h20 vSelected gSelected +disabled, Selected
+Gui, Add, Radio, x85 y675 w100 h20 vAW gAW +disabled, Active Window
+Gui, Add, Button, x246 y625 w80 h20 +Disabled vEdit2 gEdit, Edit
+Gui, Add, Button, x246 y650 w80 h20 vAddBtn gAddBtn, Add
+Gui, Add, Button, x210 y675 w30 h20 vunload gunload , -
+Gui, Add, Button, x180 y675 w30 h20 vload gload , +
+Gui, Add, Button, x246 y675 w80 h20 +disabled vRemove gRemove, Remove
+Gui, Add, GroupBox, x6 y610 w330 h95 , 
+Gui, Add, GroupBox, x346 y610 w160 h95 , 
+Gui, Add, DropDownList, x86 y625 w150 h20 R5 vDDsL hwndhDDL gDDL , 
+Gui, Add, Radio, x352 y657 w75 w73 vAP gAllProcess +Checked, All process
+Gui, Add, Radio, x430 y652 w80 w73 vOM gOnlyMedia, Only media
+Gui, Add, Slider, x350 y680 w152 h20 vSlider Range0-100 ToolTip  +disabled, 0
+Gui, Add, Button, x356 y625 w70 h20 vSave gSave +disabled, Save
+Gui, Add, Button, x430 y625 w70 h20 vCancel  gCancel +disabled, Cancel
+Gui, Show,w510 h710, Sound Volume Mixer | Version %ClientVersion%
+
 Menu, tray, NoStandard
-	Menu, tray, add, @bass_devware, group 
-		Menu, tray, add, Updates, updlist 
-			Menu, tray, add, WebSite, WebSite
-				Menu, tray, Disable, WebSite
-			Menu, tray, add  
-		Menu, tray, add, Restore SoundMixer, Restore 
-	Menu, tray, add 
+Menu, tray, add, Restore SVMixer, Restore 
+Menu, tray, add 
 Menu, tray, add, Quit, Exit  
-;~ Tray
+
+#include svm_funcs.ahk
 return
 
 AllProcess:
@@ -325,116 +348,7 @@ Restore:
 Gui,Show
 return
 
-website:
-updlist:
-bassdevelopersoftware:
-oWhr := ComObjCreate("WinHttp.WinHttpRequest.5.1")
-	oWhr.Open("GET", "https://raw.githubusercontent.com/MirchikAhtung/soundmixer/master/update.log.txt", false)
-		oWhr.Send()
-	html := oWhr.ResponseText
-MsgBox % html
-return
-
-group:
-run, https://vk.com/bass_devware
-return
-
+end::reload
+!end::
 Exit:
 ExitApp
-return
-
-RemoveRecurStrings()	{
-	global availablekeys
-	availablekeys := "PIDPID"
-	Loop % LV_GetCount()
-	{
-		count += 1
-		LV_GetText(RetrievedText, count, 1)
-		If InStr(availablekeys, "PID" RetrievedText "PID")	{
-			LV_Delete(count)
-			count -= 1
-		}
-		availablekeys := availablekeys . RetrievedText . "PID"
-	}
-}
-
-SetAppVolume(pid, MasterVolume)	{
-    IMMDeviceEnumerator := ComObjCreate("{BCDE0395-E52F-467C-8E3D-C4579291692E}", "{A95664D2-9614-4F35-A746-DE8DB63617E6}")
-    DllCall(NumGet(NumGet(IMMDeviceEnumerator+0)+4*A_PtrSize), "UPtr", IMMDeviceEnumerator, "UInt", 0, "UInt", 1, "UPtrP", IMMDevice, "UInt")
-    ObjRelease(IMMDeviceEnumerator)
-
-    VarSetCapacity(GUID, 16)
-    DllCall("Ole32.dll\CLSIDFromString", "Str", "{77AA99A0-1BD6-484F-8BC7-2C654C9A9B6F}", "UPtr", &GUID)
-    DllCall(NumGet(NumGet(IMMDevice+0)+3*A_PtrSize), "UPtr", IMMDevice, "UPtr", &GUID, "UInt", 23, "UPtr", 0, "UPtrP", IAudioSessionManager2, "UInt")
-    ObjRelease(IMMDevice)
-
-    DllCall(NumGet(NumGet(IAudioSessionManager2+0)+5*A_PtrSize), "UPtr", IAudioSessionManager2, "UPtrP", IAudioSessionEnumerator, "UInt")
-    ObjRelease(IAudioSessionManager2)
-
-    DllCall(NumGet(NumGet(IAudioSessionEnumerator+0)+3*A_PtrSize), "UPtr", IAudioSessionEnumerator, "UIntP", SessionCount, "UInt")
-    Loop % SessionCount
-    {
-        DllCall(NumGet(NumGet(IAudioSessionEnumerator+0)+4*A_PtrSize), "UPtr", IAudioSessionEnumerator, "Int", A_Index-1, "UPtrP", IAudioSessionControl, "UInt")
-        IAudioSessionControl2 := ComObjQuery(IAudioSessionControl, "{BFB7FF88-7239-4FC9-8FA2-07C950BE9C6D}")
-        ObjRelease(IAudioSessionControl)
-
-        DllCall(NumGet(NumGet(IAudioSessionControl2+0)+14*A_PtrSize), "UPtr", IAudioSessionControl2, "UIntP", ProcessId, "UInt")
-        If (pid == ProcessId)
-        {
-            ISimpleAudioVolume := ComObjQuery(IAudioSessionControl2, "{87CE5498-68D6-44E5-9215-6DA47EF883D8}")
-            DllCall(NumGet(NumGet(ISimpleAudioVolume+0)+3*A_PtrSize), "UPtr", ISimpleAudioVolume, "Float", MasterVolume/100.0, "UPtr", 0, "UInt")
-            ObjRelease(ISimpleAudioVolume)
-        }
-        ObjRelease(IAudioSessionControl2)
-    }
-    ObjRelease(IAudioSessionEnumerator)
-}
-
-GetModuleFileNameEx(p_pid)	{ 
-	if A_OSVersion in WIN_95,WIN_98,WIN_ME 
-	{ 
-		MsgBox, This Windows version (%A_OSVersion%) is not supported. 
-		return 
-	} 
-	h_process := DllCall( "OpenProcess", "uint", 0x10|0x400, "int", false, "uint", p_pid ) 
-	if (ErrorLevel or h_process = 0) 
-		return 
-	name_size = 255 
-	VarSetCapacity( name, name_size ) 
-	result := DllCall( "psapi.dll\GetModuleFileNameEx" ( A_IsUnicode ? "W" : "A" ), "uint", h_process, "uint", 0, "str", name, "uint", name_size ) 
-	DllCall( "CloseHandle", h_process ) 
-	return, name 
-}
-
-GetActive_Media()	{ 
-	IMMDeviceEnumerator := ComObjCreate("{BCDE0395-E52F-467C-8E3D-C4579291692E}", "{A95664D2-9614-4F35-A746-DE8DB63617E6}") 
-	DllCall(NumGet(NumGet(IMMDeviceEnumerator+0)+4*A_PtrSize), "UPtr", IMMDeviceEnumerator, "UInt", 0, "UInt", 1, "UPtrP", IMMDevice, "UInt") 
-	ObjRelease(IMMDeviceEnumerator) 
-
-	VarSetCapacity(GUID, 16) 
-	DllCall("Ole32.dll\CLSIDFromString", "Str", "{77AA99A0-1BD6-484F-8BC7-2C654C9A9B6F}", "UPtr", &GUID) 
-	DllCall(NumGet(NumGet(IMMDevice+0)+3*A_PtrSize), "UPtr", IMMDevice, "UPtr", &GUID, "UInt", 23, "UPtr", 0, "UPtrP", IAudioSessionManager2, "UInt") 
-	ObjRelease(IMMDevice) 
-
-	DllCall(NumGet(NumGet(IAudioSessionManager2+0)+5*A_PtrSize), "UPtr", IAudioSessionManager2, "UPtrP", IAudioSessionEnumerator, "UInt") 
-	ObjRelease(IAudioSessionManager2) 
-
-	DllCall(NumGet(NumGet(IAudioSessionEnumerator+0)+3*A_PtrSize), "UPtr", IAudioSessionEnumerator, "UIntP", SessionCount, "UInt") 
-	Loop % SessionCount 
-	{ 
-	DllCall(NumGet(NumGet(IAudioSessionEnumerator+0)+4*A_PtrSize), "UPtr", IAudioSessionEnumerator, "Int", A_Index-1, "UPtrP", IAudioSessionControl, "UInt") 
-	IAudioSessionControl2 := ComObjQuery(IAudioSessionControl, "{BFB7FF88-7239-4FC9-8FA2-07C950BE9C6D}") 
-	ObjRelease(IAudioSessionControl) 
-
-	DllCall(NumGet(NumGet(IAudioSessionControl2+0)+14*A_PtrSize), "UPtr", IAudioSessionControl2, "UIntP", ProcessId, "UInt") 
-	if (ProcessId) 
-		PID .= ProcessId "," 
-	ObjRelease(IAudioSessionControl2) 
-	} 
-	ObjRelease(IAudioSessionEnumerator) 
-	StringTrimRight, PID, PID, 1 
-	return PID 
-}
-
-end::reload
-!end::ExitApp
