@@ -1,4 +1,16 @@
-﻿RemoveRecurStrings()	{
+﻿/*
+
+    RemoveRecurStrings()
+
+    SetAppVolume(pid, MasterVolume)
+
+    GetModuleFileNameEx(p_pid)
+
+    GetActive_Media()
+
+*/
+
+RemoveRecurStrings()	{
 	global availablekeys
 	availablekeys := "PIDPID"
 	Loop % LV_GetCount()

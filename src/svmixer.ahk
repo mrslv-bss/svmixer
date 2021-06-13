@@ -18,41 +18,22 @@
 		~ Release
 	Current version: [1.1] 6.13.2021
 		~ [1.1.1] Code and tabulation optimization
+		~ [1.1.2] Divided the functionality of the main file into several files for better code maintainability. Clear up code.
 */
 
 #SingleInstance ignore
 #Persistent
 OnExit, ExitLabel
-ClientVersion := "6"
 
 ; Run as Admin
 TryAgain:
 if not A_IsAdmin
 	Run *RunAs "%A_ScriptFullPath%",,UseErrorLevel
 if (errorlevel)	{
-	MsgBox, 262212, Sound Volume Mixer, SVMixer`, was NOT run as administrator.`n`n===`nFor the text erase function to work correctly, the script must be run by the administrator.`n`nPress Yes - to run as administrator.`nPress No - to continue.
+	MsgBox, 262212, Sound Volume Mixer, SVMixer`, was NOT run as administrator.`n`n===`nTo make the functions work correctly, the script must be run by the administrator.`n`nPress Yes - to run as administrator.`nPress No - to continue.
 	IfMsgBox Yes
 		goto TryAgain
 }
-
-;  AutoUpdate
-oWhr := ComObjCreate("WinHttp.WinHttpRequest.5.1")
-oWhr.Open("GET", "https://raw.githubusercontent.com/MirchikAhtung/soundmixer/master/readme.txt", false)
-oWhr.Send()
-RegExMatch(oWhr.ResponseText, "0.(.*)v`n`n  2.", version)
-
-Actualversion := InStr(version1, 6) ? True : False
-if !(Actualversion)
-	MsgBox, NEW VERSION
-	
-; if (version1 != ClientVersion)	{
-; 	MsgBox, 262212, Update released, 	Version of your client - 0.%ClientVersion%`nLatest version - 0.%version1%`n`nWant to download the new version now?`n`n"YES" - Open Browser Page`n"NO" - Open current version (0.%ClientVersion%)
-; 	IfMsgBox Yes	
-; 	{
-; 		run, https://github.com/MirchikAhtung/soundmixer/blob/master/SoundMixer_R0.%version1%.exe
-; 		ExitApp
-; 	}
-; }
 
 Gui, Margin, 10, 10
 Gui, Add, ListView, w500 h600 vList +disabled +AltSubmit, PID|Process Name|Command Line
@@ -79,7 +60,21 @@ Gui, Add, Radio, x430 y652 w80 w73 vOM gOnlyMedia, Only media
 Gui, Add, Slider, x350 y680 w152 h20 vSlider Range0-100 ToolTip  +disabled, 0
 Gui, Add, Button, x356 y625 w70 h20 vSave gSave +disabled, Save
 Gui, Add, Button, x430 y625 w70 h20 vCancel  gCancel +disabled, Cancel
-Gui, Show,w510 h710, Sound Volume Mixer | Version %ClientVersion%
+
+; To disable auto-update, comment out these lines
+oWhr := ComObjCreate("WinHttp.WinHttpRequest.5.1")
+oWhr.Open("GET", "https://raw.githubusercontent.com/mrslv-bss/svmixer/main/README.md", false)
+oWhr.Send()
+RegExMatch(oWhr.ResponseText, "!\[Image alt\]\(https://img\.shields\.io/badge/Script%20Version-0.(\d)v-green\)", version)
+Actualrelease := InStr(version1, 6) ? True : False
+if !(Actualrelease)
+	MsgBox, NEW VERSION
+; To disable auto-update, comment out these lines
+
+if (Actualrelease == "")
+	Gui, Show, w510 h710, Sound Volume Mixer
+else
+	Gui, Show, w510 h710, Sound Volume Mixer | %version1%
 
 Menu, tray, NoStandard
 Menu, tray, add, Restore SVMixer, Restore 
@@ -87,8 +82,10 @@ Menu, tray, add
 Menu, tray, add, Quit, Exit  
 
 #include svm_funcs.ahk
+#include svm_profiles.ahk
 return
 
+; GUI All process Radio control
 AllProcess:
 LV_Delete()
 for process in ComObjGet("winmgmts:").ExecQuery("Select * from Win32_Process")
@@ -97,6 +94,7 @@ LV_ModifyCol()
 RemoveRecurStrings()
 return
 
+; GUI Only Media Radio control
 OnlyMedia:
 LV_Delete()
 Loop, Parse, % GetActive_Media(), `, 
@@ -110,6 +108,7 @@ LV_ModifyCol()
 RemoveRecurStrings()
 return
 
+; GUI Add button control
 AddBtn:
 GuiControl,enable,List
 GuiControl, disable, load
@@ -117,24 +116,26 @@ GuiControl,disable, unload
 add := true
 return
 
+; Launched in response to a right-click or press of the Apps key. Selecting process. ListView control.
 GuiContextMenu:
 selectedis := A_EventInfo
 if (A_EventInfo != false)	{
-GuiControl, disable, AP
-    GuiControl,disable,OM
-        GuiControl, disable, DDsL
-            GuiControl,disable,List
-                GuiControl,disable,AddBtn
-                    GuiControl,enable,cancel
-                    GuiControl,enable,Selected
-                GuiControl,enable,AW
-            LV_GetText(selectedprocessPID, selectedis, 1)
-        LV_GetText(selectedprocessName, selectedis, 2)
-    gui, submit, nohide
-GuiControl,,edit, PID - %selectedprocessPID% | Process - %selectedprocessName%
+	GuiControl, disable, AP
+	GuiControl,disable,OM
+	GuiControl, disable, DDsL
+	GuiControl,disable,List
+	GuiControl,disable,AddBtn
+	GuiControl,enable,cancel
+	GuiControl,enable,Selected
+	GuiControl,enable,AW
+	LV_GetText(selectedprocessPID, selectedis, 1)
+	LV_GetText(selectedprocessName, selectedis, 2)
+	gui, submit, nohide
+	GuiControl,,edit, PID - %selectedprocessPID% | Process - %selectedprocessName%
 }
 return
 
+; GUI Hotkey control
 AWHotkey:
 if (editvar != "save")	{
 	GuiControl,enable,save
@@ -142,68 +143,74 @@ if (editvar != "save")	{
 }
 return
 
+; GUI Choosed process in ListView Radio control
 Selected:
 GuiControl,enable,AWHotkey
 tosave := true
 return
 
+; GUI Active Window Radio control
 AW:
 GuiControl,enable,AWHotkey
 tosave := "2"
 return
 
+; After filling in all the required fields, save the hotkey.
 Save:
 if (tosave = "2")	{
 	selectedprocessPID = ActiveWindow
 	selectedprocessName = ActiveWindow
 }
 if (AWHotkey != "")	{
-GuiControl,disable,AWHotkey
+	GuiControl,disable,AWHotkey
 	gui, submit, nohide
-		ItemText = %slider% | %AWHotkey% | %selectedprocessPID% | %selectedprocessName%
-			SendMessage, 0x143, 0, &ItemText , , ahk_id %hDDL%  ;  CB_ADDSTRING 
-				GuiControl,disable,Selected
-					GuiControl,disable,AW
-						GuiControl,disable,save
-						GuiControl,disable, slider
-					GuiControl,disable,cancel
-				GuiControl,,AWHotkey,
-			GuiControl, Enable, load
-		GuiControl,Enable, unload
+	ItemText = %slider% | %AWHotkey% | %selectedprocessPID% | %selectedprocessName%
+	SendMessage, 0x143, 0, &ItemText , , ahk_id %hDDL%  ;  CB_ADDSTRING 
+	GuiControl,disable,Selected
+	GuiControl,disable,AW
+	GuiControl,disable,save
+	GuiControl,disable, slider
+	GuiControl,disable,cancel
+	GuiControl,,AWHotkey,
+	GuiControl, Enable, load
+	GuiControl,Enable, unload
 	LV_Modify(selectedis, "-Focus")
 goto refreshprofiles
 }
 return
 
+; Cancel save the hotkey
 Cancel:
 GuiControl,enable,DDsL
-    GuiControl,disable,Selected
-        GuiControl,disable,AW
-            GuiControl,disable,save
-                GuiControl,Enable,AddBtn
-					GuiControl,disable,cancel
-						GuiControl,,AWHotkey,
-						GuiControl,disable,AWHotkey
-					GuiControl,disable,slider
-				GuiControl,Enable,AP
-			GuiControl,Enable,OM
-		GuiControl, Enable, load
-	GuiControl,Enable, unload
+GuiControl,disable,Selected
+GuiControl,disable,AW
+GuiControl,disable,save
+GuiControl,Enable,AddBtn
+GuiControl,disable,cancel
+GuiControl,,AWHotkey,
+GuiControl,disable,AWHotkey
+GuiControl,disable,slider
+GuiControl,Enable,AP
+GuiControl,Enable,OM
+GuiControl, Enable, load
+GuiControl,Enable, unload
 LV_Modify(selectedis, "-Focus")
 return
 
+; Delete saved hotkey
 remove:
 gui, submit, nohide
-	RegExMatch(DDsL, "(.*) \Q|\E (.*) \Q|\E (.*) \Q|\E (.*)", rprofile)
-		hotkey, %rprofile2%, hotkey, off, UseErrorLevel
-			SendMessage, 0x158, 1, &DDsL, , ahk_id %hDDL%  ;  CB_FINDSTRINGEXACT
-				ItemIndex := ErrorLevel
-            SendMessage, 0x0144, ItemIndex, , , ahk_id %hDDL%  ;  CB_DELETESTRING
-        SendMessage, 0x014F, 1, , , ahk_id %hDDL%   ;	CB_SHOWDROPDOWN
-    GuiControl,disable,remove
+RegExMatch(DDsL, "(.*) \Q|\E (.*) \Q|\E (.*) \Q|\E (.*)", rprofile)
+hotkey, %rprofile2%, hotkey, off, UseErrorLevel
+SendMessage, 0x158, 1, &DDsL, , ahk_id %hDDL%  ;  CB_FINDSTRINGEXACT
+ItemIndex := ErrorLevel
+SendMessage, 0x0144, ItemIndex, , , ahk_id %hDDL%  ;  CB_DELETESTRING
+SendMessage, 0x014F, 1, , , ahk_id %hDDL%   ;	CB_SHOWDROPDOWN
+GuiControl,disable,remove
 GuiControl,disable,edit2
 return
 
+; DropDownList label, when we choose any saved hotkey.
 DDL:
 gui, submit, nohide
 if (DDsL != "")	{
@@ -212,6 +219,7 @@ if (DDsL != "")	{
 }
 return
 
+; Edit saved hotkey
 edit:
 gui, submit, nohide
 if (editvar != "save")	{
@@ -245,29 +253,7 @@ SendMessage, 0x014F, 1, , , ahk_id %hDDL%   ;	CB_SHOWDROPDOWN
     }
 return
 
-refreshprofiles:
-GuiControl, Enable, AddBtn
-	GuiControl, Enable, DDsL
-		GuiControl, Enable, AP
-			GuiControl, Enable, OM
-		GuiControl, Enable, unload
-	GuiControl, Enable, load
-ControlGet, refprofiles, List,, ComboBox1, A
-Loop, parse, refprofiles, `n, `r 
-{
-	RegExMatch(A_LoopField, "(.*) \Q|\E (.*) \Q|\E (.*) \Q|\E (.*)", profile%A_Index%)
-	If (profile%A_Index%1 = "" Or profile%A_Index%2 = "" Or profile%A_Index%3 = "" Or profile%A_Index%4 = "")	{
-		MsgBox The profile file is damaged. [ №%A_Index% ]
-		return
-	}
-	tempvar := profile%A_Index%2
-	pid%tempvar% := profile%A_Index%3
-	process%tempvar% := profile%A_Index%4
-	%tempvar% := profile%A_Index%1
-	hotkey, %tempvar%, hotkey, on, UseErrorLevel
-}
-return
-
+; Running hotkey label
 hotkey:
 If (pid%A_ThisHotkey% = "ActiveWindow" Or process%A_ThisHotkey% = "ActiveWindow")
 	WinGet, pid%A_ThisHotkey%, PID, A
@@ -282,66 +268,6 @@ if A_ExitReason not in Logoff,Shutdown
         return
 }
 ExitApp
-return
-
-load:
-GuiControl, Disable, AddBtn
-	GuiControl, Disable, DDsL
-		GuiControl, Disable, AP
-			GuiControl, Disable, OM
-		GuiControl, Disable, unload
-	GuiControl, Disable, load
-FileSelectFile, SelectedFile, 3, , Open a config with profiles., Text Documents (*.ini)
-if (SelectedFile != "")	{
-	FileRead, Profiles, %SelectedFile%
-Loop, parse, Profiles, `n, `r
-{
-RegExMatch(A_LoopField, "(.*) \Q|\E (.*) \Q|\E (.*) \Q|\E (.*)", load)
-If (load1 = "" Or load2 = "" Or load3 = "" Or load4 = "")	{
-	MsgBox, 16, Warning!, The profile file is damaged | Line: %A_LoopField%
-}	else	{
-	if (load3 != "ActiveWindow")	{
-		Process, Exist, % load4
-		if ErrorLevel != % load3
-			load3 := ErrorLevel
-	}
-	line = %load1% | %load2% | %load3% | %load4%
-	SendMessage, 0x143, 0, &line , , ahk_id %hDDL%  ;  CB_ADDSTRING 
-	}
-} 
-TrayTip, Load your profiles., Profiles have been loaded., 3
-}
-goto refreshprofiles
-return
-
-unload:
-GuiControl, Disable, AddBtn
-	GuiControl, Disable, DDsL
-		GuiControl, Disable, AP
-			GuiControl, Disable, OM
-				GuiControl, Disable, unload
-				GuiControl, Disable, load
-			TrayTip, Saving your profile., Select a folder to save your profile., 5
-		sleep 2000
-	ControlGet, freeprofiles, List,, ComboBox1, A
-FileSelectFolder, OutputVar, , 3
-if (OutputVar != "")	{
-	FormatTime, time,,hh.mm.ss
-	FileAppend,%freeprofiles%,%OutputVar%\profilesettings_%time%.ini
-	FileGetSize, size, %OutputVar%\profilesettings_%time%.ini
-	if (size != false)
-		MsgBox, 64, Excellent!, Profile has been saved.
-	else
-		MsgBox, 16, Warning!, Profile not saved.
-}
-else
-	MsgBox, 48, Warning!, You have not selected a folder.
-GuiControl, Enable, AddBtn
-	GuiControl, Enable, DDsL
-		GuiControl, Enable, AP
-		GuiControl, Enable, OM
-	GuiControl, Enable, unload
-GuiControl, Enable, load
 return
 
 Restore:
