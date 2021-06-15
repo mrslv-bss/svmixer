@@ -11,4 +11,4 @@ Select any process as many times you like.
 
 <hr>
 
-![Image alt](https://github.com/mrslv-bss/svmixer/blob/dev-branch/img/svmixer_main.jpg)
+![Image alt](https://github.com/mrslv-bss/svmixer/blob/main/img/svmixer_main.jpg)
