@@ -1,10 +1,14 @@
-# SoundMixerRemaster
-![Image alt](https://github.com/BassTechnologies/SoundMixerRemaster/blob/main/img/Screenshot_1.png)
+# SVMixer - Sound Volume Mixer
+![Image alt](https://img.shields.io/badge/platform-win--64-lightgrey) ![Image alt](https://img.shields.io/badge/ahk-1.1.33.02-green) ![Image alt](https://img.shields.io/github/last-commit/mrslv-bss/svmixer) ![Image alt](https://img.shields.io/tokei/lines/github/mrslv-bss/svmixer)
 
-![Image alt](https://img.shields.io/badge/Script%20Version-0.6v-green)
+SVMIXER are change the application's volume with hotkeys. 
+
+Enjoyable selection of the process in the list, sorting by 'all process' and 'only with active sound' to define necessary process.
+
+Select any process as many times you like. 
+
+![Image alt](https://img.shields.io/github/stars/mrslv-bss/svmixer?style=social)
 
 <hr>
 
-[<img src="https://github.com/BassTechnologies/SoundMixerRemaster/blob/main/img/Screenshot_2.png" width="40%">](https://raw.githubusercontent.com/BassTechnologies/SoundMixerRemaster/main/img/Screenshot_2.png)
-[<img src="https://github.com/BassTechnologies/SoundMixerRemaster/blob/main/img/Screenshot_5.png" width="40%">](https://raw.githubusercontent.com/BassTechnologies/SoundMixerRemaster/main/img/Screenshot_5.png)
-[<img src="https://github.com/BassTechnologies/SoundMixerRemaster/blob/main/img/Screenshot_6.png" width="10%">](https://raw.githubusercontent.com/BassTechnologies/SoundMixerRemaster/main/img/Screenshot_6.png)
+![Image alt](https://github.com/mrslv-bss/svmixer/blob/dev-branch/img/svmixer_main.jpg)
